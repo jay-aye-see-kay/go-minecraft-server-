@@ -24,18 +24,30 @@ func getStateMachineDiagram(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, mcss.MakeStateMachine().ToGraph())
 }
 
-func getContainers(w http.ResponseWriter, r *http.Request) {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		panic(err)
-	}
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
-	if err != nil {
-		panic(err)
-	}
+// example function playing with the docker api
+func getDockerInfo(w http.ResponseWriter, r *http.Request) {
+	cli, _ := client.NewClientWithOpts(client.FromEnv)
+
+	// containers
+	io.WriteString(w, "\nContainters:\n")
+	containers, _ := cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	for _, container := range containers {
 		img_name := fmt.Sprintf("%s %s\n", container.ID[:10], container.Image)
 		io.WriteString(w, img_name)
+	}
+
+	// networks
+	io.WriteString(w, "\nNetworks:\n")
+	networks, _ := cli.NetworkList(context.Background(), types.NetworkListOptions{})
+	for _, network := range networks {
+		io.WriteString(w, fmt.Sprintf("%s %s\n", network.ID, network.Name))
+	}
+
+	// images
+	io.WriteString(w, "\nImages:\n")
+	images, _ := cli.ImageList(context.Background(), types.ImageListOptions{})
+	for _, image := range images {
+		io.WriteString(w, fmt.Sprintf("%s %d MB\n", image.ID, image.Size/1_000_000))
 	}
 }
 
@@ -45,7 +57,7 @@ func main() {
 
 	http.HandleFunc("/", getRoot)
 	http.HandleFunc("/state-machine", getStateMachineDiagram)
-	http.HandleFunc("/containers", getContainers)
+	http.HandleFunc("/docker-info", getDockerInfo)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
