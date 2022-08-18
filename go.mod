@@ -2,7 +2,10 @@ module go-minecraft-server
 
 go 1.17
 
-require github.com/docker/docker v20.10.17+incompatible
+require (
+	github.com/docker/docker v20.10.17+incompatible
+	github.com/qmuntal/stateless v1.6.1
+)
 
 require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect

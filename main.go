@@ -9,6 +9,8 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+
+	"go-minecraft-server/mcss"
 )
 
 func getRoot(w http.ResponseWriter, r *http.Request) {
@@ -16,12 +18,12 @@ func getRoot(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "<div>Pages:</div>")
 	io.WriteString(w, "<div><ul>")
 	io.WriteString(w, "<li><a href='/containers'>list of containers</a></li>")
+	io.WriteString(w, "<li><a href='/state-machine'>a graphviz representation of the state machine</a></li>")
 	io.WriteString(w, "</ul></div>")
 }
 
-func getHello(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("got /hello request\n")
-	io.WriteString(w, "Hello, HTTP!\n")
+func getStateMachineDiagram(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, mcss.MakeStateMachine().ToGraph())
 }
 
 func main() {
@@ -31,6 +33,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", getRoot)
+	http.HandleFunc("/state-machine", getStateMachineDiagram)
 	http.HandleFunc("/containers", func(w http.ResponseWriter, r *http.Request) {
 		containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
 		if err != nil {

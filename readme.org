@@ -1,0 +1,67 @@
+* A minecraft server dashboard written in go
+This exists for me to learn go, also if I get it done that would be sweet, I would use it.
+
+In theory should be able to be run from a docker container as long as it has access to the host's docker socket so it can create new containers. For now I'll just run it on the host and let it create it's own containers.
+
+** Goals
+- create minecraft servers using [[https://github.com/itzg/docker-minecraft-server][this lovely container]]
+- list running containers and see their state (running / healthy / stopped / etc)
+- start / stop / pause them
+- have a nice UI with auto complete for most options available to the container
+- reliable incremental backups of the container
+- have a solid web ui that always accurately reflects the state of the system (react SPA)
+- scheduled tasks (like backups)
+- mc user management
+- log viewing
+- file access?
+
+** First steps
+- [ ] should I use a framework or not?
+  I'd prefer not to if I can, this is about learning go, not a framework, depends on how hard auth is without a framework
+- [X] list running containers on the system
+- [ ] read config/env variables
+  So I can configure docker network name, default port, etc
+- [X] setup a state machine
+- [ ] think out basic architecture
+- [ ] create an endpoint or two
+
+** Architecture thoughts
+I think the best way to get the reliable UI that I want is for the server to maintain a "state object" of the whole system that is essentially a tree of state machines or enums. For now this can be passed in full to the front end whenever it changes, in future we can just pass a diff, this will be a websocket so server can push whenever it wants.
+
+The front end can make changes by sending messages to the backend. Any time a message is sent to the backend we can disable the button that triggered it until the next state update, just to prevent double clicks.
+
+*** The state
+Will probably just be a list of objects with info about each server.
+#+begin_src
+state: [
+  {
+    name: 'my server',
+    state: 'running', (stopped, starting, updating, etc)
+    name: 'my server',
+  }
+]
+#+end_src
+
+*** MC server state machine
+#+begin_src
+starting
+healthy (running normally)
+unhealthy (running but malfunction of some kind)
+stopping
+stopped
+force_stopped
+#+end_src
+
+*** Extra state
+There will be extra info that's probably too big to include in the main state response, stuff like logs. This will just be it own request that we can make when required.
+
+*** The messages
+The requests the user can make of a server
+#+begin_src
+create_server: { name, config: ... }
+change_state: stop, start, etc
+backup: stop, start, etc
+
+#+end_src
+
+
