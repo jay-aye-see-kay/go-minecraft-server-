@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
@@ -23,7 +24,9 @@ func getRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func getStateMachineDiagram(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, mcss.MakeStateMachine().ToGraph())
+	tmpl := template.Must(template.ParseFiles("templates/state-machine.html"))
+
+	tmpl.Execute(w, mcss.MakeStateMachine().ToGraph())
 }
 
 func main() {
@@ -31,6 +34,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	http.HandleFunc("/", getRoot)
 	http.HandleFunc("/state-machine", getStateMachineDiagram)
