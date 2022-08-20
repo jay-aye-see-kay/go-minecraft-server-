@@ -21,5 +21,24 @@
         </li>
       </ul>
     </div>
+    <hr />
+    <button onclick="Misc.listServers()">list servers</button>
+    <button onclick="Misc.createServer()">create server</button>
+    <script>
+      const Misc = {};
+
+      Misc.listServers = function () {
+        fetch("/api/v1/servers")
+          .then((response) => response.json())
+          .then((data) => console.log(data));
+      };
+
+      Misc.createServer = function () {
+        console.log("creating server");
+        fetch("/api/v1/server/new", { method: "POST" })
+          .then((response) => response.json())
+          .then((data) => console.log(data));
+      };
+    </script>
   </body>
 </html>

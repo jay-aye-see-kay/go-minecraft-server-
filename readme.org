@@ -3,6 +3,9 @@ This exists for me to learn go, also if I get it done that would be sweet, I wou
 
 In theory should be able to be run from a docker container as long as it has access to the host's docker socket so it can create new containers. For now I'll just run it on the host and let it create it's own containers.
 
+** Resources
+The [[https://docs.docker.com/engine/api/sdk/examples/][SDK examples]] are the most useful things I've found so far
+
 ** Goals
 - create minecraft servers using [[https://github.com/itzg/docker-minecraft-server][this lovely container]]
 - list running containers and see their state (running / healthy / stopped / etc)

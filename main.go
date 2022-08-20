@@ -2,17 +2,22 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 
 	"go-minecraft-server/mcss"
 )
+
+const PREFIX = "mc-panel-go__"
 
 func getRoot(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("templates/index.html"))
@@ -59,5 +64,62 @@ func main() {
 	http.HandleFunc("/state-machine", getStateMachineDiagram)
 	http.HandleFunc("/docker-info", getDockerInfo)
 
+	http.HandleFunc("/api/v1/servers", listServers)     // get only
+	http.HandleFunc("/api/v1/server/new", createServer) // post only
+
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func listServers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.NotFound(w, r)
+	}
+
+	cli, _ := client.NewClientWithOpts(client.FromEnv)
+	containers, _ := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(containers)
+}
+
+func createServer(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.NotFound(w, r)
+	}
+
+	createdContainer := runContainerInBackground()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(createdContainer)
+}
+
+// example code, pulling and running a container, need to update to use the mc container
+func runContainerInBackground() container.ContainerCreateCreatedBody {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
+	}
+
+	imageName := "bfirsh/reticulate-splines"
+
+	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	if err != nil {
+		panic(err)
+	}
+	defer out.Close()
+	io.Copy(os.Stdout, out)
+
+	resp, err := cli.ContainerCreate(ctx, &container.Config{Image: imageName}, nil, nil, nil, "")
+	if err != nil {
+		panic(err)
+	}
+
+	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(resp.ID)
+
+	return resp
 }
